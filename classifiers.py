@@ -3,6 +3,7 @@
 from tensorflow.keras.models import Model as KerasModel
 from tensorflow.keras.layers import Input, Dense, Flatten, Conv2D, MaxPooling2D, BatchNormalization, Dropout, Reshape, Concatenate, LeakyReLU
 from tensorflow.keras.optimizers import Adam
+from transformers import TFAutoModel
 
 IMGWIDTH = 256
 
@@ -51,10 +52,11 @@ class Meso1(Classifier):
 class Meso4(Classifier):
     def __init__(self, learning_rate = 0.001):
         self.model = self.init_model()
+        self.feature_extractor = self.init_model(return_features=True)
         optimizer = Adam(learning_rate = learning_rate)
         self.model.compile(optimizer = optimizer, loss = 'mean_squared_error', metrics = ['accuracy'])
     
-    def init_model(self): 
+    def init_model(self, return_features=False): 
         x = Input(shape = (IMGWIDTH, IMGWIDTH, 3))
         
         x1 = Conv2D(8, (3, 3), padding='same', activation = 'relu')(x)
@@ -72,6 +74,9 @@ class Meso4(Classifier):
         x4 = Conv2D(16, (5, 5), padding='same', activation = 'relu')(x3)
         x4 = BatchNormalization()(x4)
         x4 = MaxPooling2D(pool_size=(4, 4), padding='same')(x4)
+
+        if return_features:
+            return KerasModel(inputs=x, outputs=x4)
         
         y = Flatten()(x4)
         y = Dropout(0.5)(y)
